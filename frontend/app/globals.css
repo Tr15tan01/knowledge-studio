@@ -1,0 +1,293 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Knowledge Studio tokens
+   Ink on cool paper; ultramarine for actions; a highlighter yellow reserved for
+   the one thing that matters most here: linking a claim to the passage behind it.
+   --------------------------------------------------------------------------- */
+:root {
+  --paper: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f6;
+  --ink: #1b1f3b;
+  --ink-2: #3a4060;
+  --muted: #5b6478;
+  --faint: #8a92a6;
+  --rule: #dce1ea;
+  --rule-strong: #c4ccda;
+  --action: #3b4cca;
+  --action-hover: #2f3fb0;
+  --action-ink: #ffffff;
+  --action-soft: #e6e9fb;
+  --highlight: #f2e14c;
+  --highlight-soft: rgba(242, 225, 76, 0.42);
+  --highlight-ink: #3d3500;
+  --ok: #1f7a4f;
+  --ok-soft: #e3f3ea;
+  --warn: #9a5b00;
+  --warn-soft: #fbefd8;
+  --danger: #b4232f;
+  --danger-soft: #fbe6e8;
+  --focus: #3b4cca;
+  --shadow-pop: 0 12px 32px -12px rgba(27, 31, 59, 0.28), 0 2px 6px rgba(27, 31, 59, 0.08);
+}
+
+.dark {
+  --paper: #12152a;
+  --surface: #191d36;
+  --surface-2: #20253f;
+  --ink: #e6e9f2;
+  --ink-2: #c9cede;
+  --muted: #9aa2b8;
+  --faint: #6f7790;
+  --rule: #2c3250;
+  --rule-strong: #3a4164;
+  --action: #8a97ff;
+  --action-hover: #a3adff;
+  --action-ink: #12152a;
+  --action-soft: #262c52;
+  --highlight: #e8d43a;
+  --highlight-soft: rgba(232, 212, 58, 0.26);
+  --highlight-ink: #f6eda0;
+  --ok: #5fcf96;
+  --ok-soft: #173327;
+  --warn: #f0b45a;
+  --warn-soft: #3a2b12;
+  --danger: #ff8089;
+  --danger-soft: #3d1a20;
+  --focus: #a3adff;
+  --shadow-pop: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-action-ink: var(--action-ink);
+  --color-action-soft: var(--action-soft);
+  --color-highlight: var(--highlight);
+  --color-highlight-soft: var(--highlight-soft);
+  --color-highlight-ink: var(--highlight-ink);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: "Bricolage Grotesque Variable", "Noto Sans Georgian Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-read: "Literata Variable", "Noto Serif Georgian Variable", ui-serif, Georgia, serif;
+
+  --text-display: 3.75rem;
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.035em;
+  --text-headline: 2.25rem;
+  --text-headline--line-height: 1.1;
+  --text-headline--letter-spacing: -0.025em;
+
+  --radius-control: 7px;
+  --radius-panel: 14px;
+  --shadow-pop: var(--shadow-pop);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-variation-settings: "opsz" 14;
+    font-feature-settings: "ss01";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-variation-settings: "opsz" 96, "wdth" 92;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: var(--highlight-soft);
+    color: inherit;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* Long-form reading text: answers, passages, reports. */
+  .prose-read {
+    font-family: var(--font-read);
+    font-size: 1.0625rem;
+    line-height: 1.68;
+    color: var(--ink);
+    max-width: 68ch;
+  }
+  .prose-read p + p {
+    margin-top: 0.85em;
+  }
+  .prose-read h2 {
+    font-family: var(--font-sans);
+    font-size: 1.35rem;
+    font-weight: 650;
+    margin: 1.6em 0 0.5em;
+    letter-spacing: -0.015em;
+  }
+  .prose-read h3 {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 650;
+    margin: 1.3em 0 0.4em;
+  }
+  .prose-read ul {
+    list-style: disc;
+    padding-left: 1.25em;
+    margin: 0.6em 0;
+  }
+  .prose-read ol {
+    list-style: decimal;
+    padding-left: 1.25em;
+    margin: 0.6em 0;
+  }
+  .prose-read li + li {
+    margin-top: 0.3em;
+  }
+  .prose-read a {
+    color: var(--action);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .prose-read code {
+    font-size: 0.9em;
+    background: var(--surface-2);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+
+  /* The highlighter: a marker swipe behind cited text. */
+  .mark {
+    background-image: linear-gradient(104deg, transparent 0.4%, var(--highlight-soft) 2.2%, var(--highlight-soft) 97%, transparent 99.6%);
+    background-repeat: no-repeat;
+    background-size: 100% 78%;
+    background-position: 0 70%;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    padding: 0 0.12em;
+    border-radius: 3px;
+  }
+  .mark-sweep {
+    animation: sweep 1100ms cubic-bezier(0.65, 0, 0.35, 1) 500ms both;
+  }
+  @keyframes sweep {
+    from {
+      background-size: 0% 78%;
+    }
+    to {
+      background-size: 100% 78%;
+    }
+  }
+
+  .cite-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5em;
+    height: 1.35em;
+    padding: 0 0.35em;
+    margin: 0 0.1em;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.72em;
+    font-weight: 650;
+    vertical-align: 0.18em;
+    background: var(--highlight-soft);
+    color: var(--highlight-ink);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--highlight) 60%, transparent);
+    transition: background-color 120ms;
+  }
+  .cite-chip:hover,
+  .cite-chip[data-active="true"] {
+    background: var(--highlight);
+    color: #2a2400;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes slidein {
+    from {
+      transform: translateX(24px);
+      opacity: 0;
+    }
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2), var(--rule), var(--surface-2));
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .mark-sweep {
+    animation: none;
+  }
+}

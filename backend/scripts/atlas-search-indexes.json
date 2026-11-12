@@ -1,0 +1,93 @@
+{
+  "vector": {
+    "name": "chunks_vector_v1",
+    "type": "vectorSearch",
+    "collection": "chunks",
+    "definition": {
+      "fields": [
+        {
+          "type": "vector",
+          "path": "embedding",
+          "numDimensions": 768,
+          "similarity": "cosine"
+        },
+        {
+          "type": "filter",
+          "path": "embedding_space"
+        },
+        {
+          "type": "filter",
+          "path": "workspace_id"
+        },
+        {
+          "type": "filter",
+          "path": "file_id"
+        },
+        {
+          "type": "filter",
+          "path": "source_id"
+        },
+        {
+          "type": "filter",
+          "path": "source_type"
+        },
+        {
+          "type": "filter",
+          "path": "language"
+        }
+      ]
+    }
+  },
+  "text": {
+    "name": "chunks_text_v1",
+    "type": "search",
+    "collection": "chunks",
+    "definition": {
+      "mappings": {
+        "dynamic": false,
+        "fields": {
+          "text": {
+            "type": "string",
+            "analyzer": "lucene.standard",
+            "multi": {
+              "english": {
+                "type": "string",
+                "analyzer": "lucene.english"
+              }
+            }
+          },
+          "section_title": {
+            "type": "string",
+            "analyzer": "lucene.standard"
+          },
+          "source_title": {
+            "type": "string",
+            "analyzer": "lucene.standard"
+          },
+          "author": {
+            "type": "string",
+            "analyzer": "lucene.standard"
+          },
+          "workspace_id": {
+            "type": "objectId"
+          },
+          "file_id": {
+            "type": "objectId"
+          },
+          "source_id": {
+            "type": "objectId"
+          },
+          "source_type": {
+            "type": "token"
+          },
+          "embedding_space": {
+            "type": "token"
+          },
+          "language": {
+            "type": "token"
+          }
+        }
+      }
+    }
+  }
+}

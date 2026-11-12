@@ -1,0 +1,14 @@
+[
+  {
+    "question": "How do honeybees tell each other where flowers are?",
+    "expected": [{"source_title": "georgia", "contains": "waggle dance"}]
+  },
+  {
+    "question": "What seasonal practice do Caucasus shepherds follow?",
+    "expected": [{"source_title": "georgia", "contains": "transhumance"}]
+  },
+  {
+    "question": "Which river runs through Tbilisi?",
+    "expected": [{"source_title": "georgia", "contains": "Mtkvari"}]
+  }
+]

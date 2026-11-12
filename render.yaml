@@ -1,0 +1,27 @@
+# Render Blueprint: the whole app in one free web service (API + background worker + web app).
+# See docs/deployment.md, "One free service". Render asks for MONGODB_URI and GEMINI_API_KEY.
+services:
+  - type: web
+    name: knowledge-studio
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt && cd frontend && npm ci --include=dev && npm run build
+    startCommand: bash scripts/start-single.sh
+    healthCheckPath: /health/live
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: NODE_VERSION
+        value: 22
+      - key: APP_ENV
+        value: production
+      - key: STORAGE_BACKEND
+        value: mongodb
+      - key: WORKER_CONCURRENCY
+        value: 1
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

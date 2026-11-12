@@ -1,0 +1,32 @@
+[project]
+name = "knowledge-studio-backend"
+version = "1.0.0"
+requires-python = ">=3.12"
+description = "Knowledge Studio API and workers"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+markers = [
+  "external: tests that call real external APIs (opt-in with RUN_EXTERNAL_TESTS=1)",
+]
+filterwarnings = ["ignore::DeprecationWarning:langdetect.*"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S", "BLE"]
+ignore = ["S101", "S311", "B008", "E501", "S105", "S106", "UP047", "UP046", "ASYNC109", "ASYNC240", "ASYNC250", "S110"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B"]
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+check_untyped_defs = false
+warn_unused_ignores = false
