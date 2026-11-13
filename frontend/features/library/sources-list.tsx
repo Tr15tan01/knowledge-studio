@@ -2,11 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, FileText, Search } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
-import { EmptyState, ErrorState, LoadingRows, Meta, PageHeader, Pagination } from "@/components/ui/misc";
+import { EmptyState, ErrorState, LoadingRows, PageHeader, Pagination } from "@/components/ui/misc";
+import { Shelf, ShelfBook } from "@/features/library/bookshelf";
 import { useDebounced, useUrlState } from "@/hooks/use-url-state";
 import { get } from "@/lib/api";
 import { formatDate } from "@/lib/format";
@@ -71,28 +71,25 @@ export function SourcesList({ kind }: { kind: "book" | "document" }) {
           {filtered ? "Try a different title, author or language." : kind === "book" ? "PDFs and DOCX files with chapters are detected as books. You can also choose “Book” when uploading." : "Upload notes, articles or data files."}
         </EmptyState>
       ) : (
-        <ul className="grid gap-x-8 sm:grid-cols-2">
-          {res.data.items.map((s) => (
-            <li key={s.id} className="border-b border-rule">
-              <Link href={`/app/library/${s.file_id}`} className="group flex gap-4 py-4">
-                <span
-                  className="grid h-16 w-12 shrink-0 place-items-center rounded-[4px] border border-rule bg-surface text-faint shadow-[2px_2px_0_var(--rule)]"
-                  aria-hidden
-                >
-                  <Icon className="size-5" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-medium group-hover:underline">{s.title || "Untitled"}</span>
-                  <span className="block truncate text-sm text-ink-2">{s.author || <span className="text-faint">Author unknown</span>}</span>
-                  <Meta
-                    className="mt-1"
-                    items={[s.page_count ? `${s.page_count} pages` : null, s.language ? LANGS[s.language] || s.language : null, `${s.chunk_count} passages`, `Added ${formatDate(s.created_at)}`]}
-                  />
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <Shelf label={kind === "book" ? "Books" : "Documents"}>
+          {res.data.items.map((s) => {
+            const pages = s.page_count ? `${s.page_count} pages` : null;
+            return (
+              <ShelfBook
+                key={s.id}
+                seed={s.id}
+                href={`/app/library/${s.file_id}`}
+                title={s.title || "Untitled"}
+                sub={s.author || pages}
+                kind={kind}
+                // The cover has room for a title and one line; the rest is in the tooltip and on the file's page.
+                hint={[s.title || "Untitled", s.author, pages, s.language ? LANGS[s.language] || s.language : null, `${s.chunk_count} passages`, `Added ${formatDate(s.created_at)}`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              />
+            );
+          })}
+        </Shelf>
       )}
       {res.data && <Pagination page={page} pageSize={24} total={res.data.total} onPage={(p) => setF({ page: String(p) })} />}
     </>

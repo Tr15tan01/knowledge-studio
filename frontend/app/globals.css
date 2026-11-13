@@ -7,7 +7,8 @@
    Ink on cool paper; ultramarine for actions; a highlighter yellow reserved for
    the one thing that matters most here: linking a claim to the passage behind it.
    --------------------------------------------------------------------------- */
-:root {
+:root,
+[data-theme="blue"] {
   --paper: #f4f6f9;
   --surface: #ffffff;
   --surface-2: #eef1f6;
@@ -34,7 +35,8 @@
   --shadow-pop: 0 12px 32px -12px rgba(27, 31, 59, 0.28), 0 2px 6px rgba(27, 31, 59, 0.08);
 }
 
-.dark {
+.dark,
+[data-theme="midnight"] {
   --paper: #12152a;
   --surface: #191d36;
   --surface-2: #20253f;
@@ -59,6 +61,114 @@
   --danger-soft: #3d1a20;
   --focus: #a3adff;
   --shadow-pop: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ---------------------------------------------------------------------------
+   Colour themes. `data-theme` on <html> selects one; dark themes also carry the
+   `dark` class (status colours, colour-scheme and `dark:` utilities come from it).
+   The same attribute on any element re-themes just that element, which is how the
+   theme picker draws its previews.
+   --------------------------------------------------------------------------- */
+[data-theme="white"] {
+  --paper: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #efeff2;
+  --ink: #18181b;
+  --ink-2: #3f3f46;
+  --muted: #5f5f69;
+  --faint: #8e8e98;
+  --rule: #e4e4e7;
+  --rule-strong: #cdcdd4;
+  --action: #27272a;
+  --action-hover: #000000;
+  --action-ink: #ffffff;
+  --action-soft: #e9e9ed;
+  --focus: #27272a;
+}
+
+[data-theme="green"] {
+  --paper: #f2f7f3;
+  --surface: #ffffff;
+  --surface-2: #e7f0e9;
+  --ink: #16291d;
+  --ink-2: #33483a;
+  --muted: #55695b;
+  --faint: #85968a;
+  --rule: #d7e3da;
+  --rule-strong: #bdcfc2;
+  --action: #1c7645;
+  --action-hover: #155f37;
+  --action-ink: #ffffff;
+  --action-soft: #dcf0e3;
+  --focus: #1c7645;
+}
+
+[data-theme="sepia"] {
+  --paper: #f5eee1;
+  --surface: #fffaf0;
+  --surface-2: #ede3d1;
+  --ink: #3a2c1c;
+  --ink-2: #554433;
+  --muted: #72604c;
+  --faint: #9a8973;
+  --rule: #e2d5bf;
+  --rule-strong: #cdbca1;
+  --action: #9a4a1c;
+  --action-hover: #7d3b15;
+  --action-ink: #ffffff;
+  --action-soft: #f2dcc9;
+  --focus: #9a4a1c;
+}
+
+[data-theme="violet"] {
+  --paper: #f6f4fb;
+  --surface: #ffffff;
+  --surface-2: #ece8f7;
+  --ink: #221a3a;
+  --ink-2: #40365c;
+  --muted: #615878;
+  --faint: #8f88a6;
+  --rule: #e0daf0;
+  --rule-strong: #c9c0e2;
+  --action: #6a3cc0;
+  --action-hover: #5730a3;
+  --action-ink: #ffffff;
+  --action-soft: #eae3fb;
+  --focus: #6a3cc0;
+}
+
+[data-theme="black"] {
+  --paper: #000000;
+  --surface: #0d0d0f;
+  --surface-2: #19191c;
+  --ink: #f4f4f5;
+  --ink-2: #d4d4d8;
+  --muted: #a1a1aa;
+  --faint: #74747e;
+  --rule: #26262a;
+  --rule-strong: #3d3d44;
+  --action: #f4f4f5;
+  --action-hover: #ffffff;
+  --action-ink: #000000;
+  --action-soft: #222226;
+  --focus: #f4f4f5;
+}
+
+[data-theme="forest"] {
+  --paper: #0d1611;
+  --surface: #131f19;
+  --surface-2: #1a2a21;
+  --ink: #e3efe7;
+  --ink-2: #c3d4c9;
+  --muted: #93a89b;
+  --faint: #68796e;
+  --rule: #25372d;
+  --rule-strong: #33483c;
+  --action: #6fdc9c;
+  --action-hover: #8be8b0;
+  --action-ink: #0d1611;
+  --action-soft: #1c3929;
+  --focus: #8be8b0;
 }
 
 @theme inline {
@@ -250,6 +360,241 @@
     from {
       transform: translateX(24px);
       opacity: 0;
+    }
+  }
+
+  /* Radial gauge: a 270-degree arc that fills clockwise. */
+  .gauge-arc {
+    transition: stroke-dashoffset 450ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .gauge-finishing .gauge-arc {
+    animation: gauge-pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes gauge-pulse {
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  /* "Thinking": a comet ring around a breathing core, and a light sweeping across the label. */
+  .thinking-orb {
+    position: relative;
+    width: 1.6rem;
+    height: 1.6rem;
+    flex: none;
+  }
+  .thinking-orb::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 25%, var(--action) 70%, var(--highlight) 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+    animation: ks-rotate 0.95s linear infinite;
+  }
+  .thinking-orb::after {
+    content: "";
+    position: absolute;
+    inset: 34%;
+    border-radius: 50%;
+    background: var(--action);
+    animation: ks-breathe 1.4s ease-in-out infinite;
+  }
+  .thinking-label {
+    background: linear-gradient(90deg, var(--muted) 0%, var(--muted) 38%, var(--ink) 50%, var(--muted) 62%, var(--muted) 100%);
+    background-size: 260% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: ks-sheen 1.9s linear infinite;
+  }
+  @keyframes ks-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes ks-breathe {
+    50% {
+      transform: scale(0.55);
+      opacity: 0.55;
+    }
+  }
+  @keyframes ks-sheen {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -60% 0;
+    }
+  }
+
+  /* The caret that follows an answer while it is being written. */
+  .writing > :last-child::after {
+    content: "";
+    display: inline-block;
+    width: 0.5em;
+    height: 1.05em;
+    margin-left: 0.12em;
+    vertical-align: -0.18em;
+    border-radius: 2px;
+    background: var(--action);
+    animation: ks-caret 0.9s steps(1) infinite;
+  }
+  @keyframes ks-caret {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* Bookshelf: fixed-height rows, with a board painted under each one. */
+  .shelf {
+    --shelf-row: 13.25rem;
+    --shelf-gap: 2.5rem;
+    --board: 0.8rem;
+    --board-face: color-mix(in oklab, var(--ink) 24%, var(--surface-2));
+    --board-top: color-mix(in oklab, var(--ink) 9%, var(--surface));
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    grid-auto-rows: var(--shelf-row);
+    row-gap: var(--shelf-gap);
+    padding: 0 0.75rem var(--shelf-gap);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-panel);
+    background-color: color-mix(in oklab, var(--surface-2) 55%, var(--surface));
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent var(--shelf-row),
+      var(--board-top) var(--shelf-row),
+      var(--board-top) calc(var(--shelf-row) + 2px),
+      var(--board-face) calc(var(--shelf-row) + 2px),
+      var(--board-face) calc(var(--shelf-row) + var(--board)),
+      rgba(0, 0, 0, 0.16) calc(var(--shelf-row) + var(--board)),
+      transparent calc(var(--shelf-row) + var(--board) + 0.7rem),
+      transparent calc(var(--shelf-row) + var(--shelf-gap))
+    );
+  }
+  .shelf-slot {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-width: 0;
+  }
+  .book {
+    --cover: #34507a;
+    position: relative;
+    width: 7rem;
+    height: var(--book-h, 11rem);
+    border-radius: 3px 6px 6px 3px;
+    color: #fdfbf5;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0, rgba(255, 255, 255, 0.16) 5px, rgba(0, 0, 0, 0.14) 9px, transparent 15px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 40%, rgba(0, 0, 0, 0.14)),
+      var(--cover);
+    box-shadow:
+      3px 0 0 -1px #e9e3d5,
+      4px 0 0 -1px rgba(0, 0, 0, 0.25),
+      6px 6px 12px -6px rgba(0, 0, 0, 0.5);
+    transform-origin: bottom center;
+    transition:
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 180ms;
+  }
+  .book:hover,
+  .book:focus-within {
+    transform: translateY(-0.5rem);
+    box-shadow:
+      3px 0 0 -1px #e9e3d5,
+      4px 0 0 -1px rgba(0, 0, 0, 0.25),
+      8px 14px 18px -8px rgba(0, 0, 0, 0.55);
+  }
+  .book[data-selected="true"] {
+    outline: 3px solid var(--action);
+    outline-offset: 2px;
+  }
+  /* Documents are slim paperbacks: a pale cover with a coloured band. */
+  .book[data-kind="document"] {
+    width: 6.25rem;
+    color: #2a2622;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0, rgba(255, 255, 255, 0.5) 4px, rgba(0, 0, 0, 0.05) 8px, transparent 13px),
+      linear-gradient(180deg, var(--cover) 0, var(--cover) 1.4rem, transparent 1.4rem),
+      #f3eee2;
+  }
+  .book-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    /* The top band stays clear of text: the selection box and the menu appear there. */
+    padding: 1.9rem 0.55rem 0.5rem 0.95rem;
+    border-radius: inherit;
+    overflow: hidden;
+  }
+  .book:not([data-kind="document"]) .book-face::before {
+    content: "";
+    position: absolute;
+    top: 0.75rem;
+    left: 0.95rem;
+    right: 0.55rem;
+    height: 4px;
+    border-top: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    opacity: 0.4;
+  }
+  .book-title {
+    font-family: var(--font-read);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.22;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  .book-title::after {
+    content: "";
+    display: block;
+    width: 1.5rem;
+    height: 2px;
+    margin-top: 0.4rem;
+    background: currentColor;
+    opacity: 0.45;
+  }
+  .book-sub {
+    margin-top: auto;
+    font-size: 0.66rem;
+    line-height: 1.25;
+    opacity: 0.86;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .book-veil {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: color-mix(in oklab, var(--surface) 45%, transparent);
+    pointer-events: none;
+  }
+  .book-tool {
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+  .book:hover .book-tool,
+  .book:focus-within .book-tool,
+  .book[data-selected="true"] .book-tool,
+  .book-tool:has([data-state="open"]) {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .book-tool {
+      opacity: 1;
     }
   }
 

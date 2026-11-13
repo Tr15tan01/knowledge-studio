@@ -10,7 +10,7 @@ export interface User {
   email_verified: boolean;
   has_password: boolean;
   default_workspace_id: string | null;
-  preferences: { theme?: "system" | "light" | "dark"; reduced_motion?: boolean; answer_language?: "auto" | "en" | "ka" };
+  preferences: { theme?: string; reduced_motion?: boolean; answer_language?: "auto" | "en" | "ka" };
   created_at: string | null;
   linked_providers?: string[];
 }

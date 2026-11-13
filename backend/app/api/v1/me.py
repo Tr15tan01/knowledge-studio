@@ -23,7 +23,7 @@ router = APIRouter(prefix="/me", tags=["account"])
 
 
 class Preferences(APIModel):
-    theme: Literal["system", "light", "dark"] | None = None
+    theme: Literal["system", "light", "dark", "blue", "white", "green", "sepia", "violet", "midnight", "black", "forest"] | None = None
     reduced_motion: bool | None = None
     answer_language: Literal["auto", "en", "ka"] | None = None
 

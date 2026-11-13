@@ -29,7 +29,7 @@ Shepherds move their flocks to Kazbek pastures each June. Tbilisi markets sell c
 
 /** Upload a Markdown file through the UI and wait until the library marks it ready. */
 export async function uploadSample(page: Page, name = "caucasus-notes.md", body = SAMPLE_DOC) {
-  await page.goto("/app/library");
+  await page.goto("/app/library?view=list");
   await page.getByRole("button", { name: "Upload" }).first().click();
   const dialog = page.getByRole("dialog", { name: "Upload to your library" });
   await dialog.getByTestId("file-input").setInputFiles({ name, mimeType: "text/markdown", buffer: Buffer.from(body) });

@@ -4,15 +4,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowUp, BookmarkPlus, Copy, Download, History, MessageSquarePlus, MoreHorizontal, Pencil, Square, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { Button, IconButton } from "@/components/ui/button";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/field";
 import { Menu, MenuItem, MenuSeparator } from "@/components/ui/menu";
 import { Badge, ErrorState, LoadingRows, Notice } from "@/components/ui/misc";
-import { Spinner } from "@/components/ui/spinner";
 import { EMPTY_FILTERS, FilterBar } from "@/features/ask/filters";
+import { Thinking, useTypewriter } from "@/features/ask/writing";
 import { qk, useUsage } from "@/features/auth/session";
 import { CitationProvider, CitedText, SourceList, citeRefs } from "@/features/citations/citations";
 import { useDebounced } from "@/hooks/use-url-state";
@@ -27,6 +27,8 @@ type Pending = {
   sources: Hit[];
   degraded: string[];
   estimate: Estimate | null;
+  /** The whole answer has arrived; what remains is writing it out. */
+  complete: boolean;
   error: { code: string; message: string; retryable: boolean; fallback: { label: string; items: Hit[] } | null } | null;
 };
 
@@ -47,6 +49,12 @@ function AskView() {
   const [streaming, setStreaming] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const abort = useRef<AbortController | null>(null);
+  // The answer is written out gradually; the saved message replaces it once the writing has caught up.
+  const reveal = useRef<{ done: boolean; resolve: (() => void) | null }>({ done: false, resolve: null });
+  const onRevealed = useCallback(() => {
+    reveal.current.done = true;
+    reveal.current.resolve?.();
+  }, []);
   const bottom = useRef<HTMLDivElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
 
@@ -79,10 +87,12 @@ function AskView() {
     if (!body || streaming) return;
     setQuestion("");
     setStreaming(true);
-    setPending({ question: body, text: "", sources: [], degraded: [], estimate: null, error: null });
+    setPending({ question: body, text: "", sources: [], degraded: [], estimate: null, complete: false, error: null });
+    reveal.current = { done: false, resolve: null };
     const ctrl = new AbortController();
     abort.current = ctrl;
     let newConv: string | null = null;
+    let completed = false;
     try {
       const res = await apiFetch("/ask", {
         method: "POST",
@@ -96,7 +106,17 @@ function AskView() {
         else if (ev.type === "sources") setPending((p) => p && { ...p, sources: ev.items as Hit[], degraded: (ev.degraded as string[]) || [] });
         else if (ev.type === "delta") setPending((p) => p && { ...p, text: p.text + (ev.text as string) });
         else if (ev.type === "error") setPending((p) => p && { ...p, error: ev as unknown as Pending["error"] });
-        else if (ev.type === "done") setPending(null);
+        else if (ev.type === "done") {
+          completed = true;
+          setPending((p) => p && { ...p, complete: true });
+        }
+      }
+      if (completed) {
+        await new Promise<void>((resolve) => {
+          if (reveal.current.done) return resolve();
+          reveal.current.resolve = resolve;
+          setTimeout(resolve, 3000);
+        });
       }
     } catch (e) {
       if (ctrl.signal.aborted) {
@@ -175,7 +195,7 @@ function AskView() {
               {pending && (
                 <>
                   <UserBubble text={pending.question} />
-                  <PendingAnswer p={pending} streaming={streaming} onRetry={() => ask(pending.question)} />
+                  <PendingAnswer p={pending} streaming={streaming} onRetry={() => ask(pending.question)} onRevealed={onRevealed} />
                 </>
               )}
               <div ref={bottom} />
@@ -211,7 +231,15 @@ function AskView() {
                   className="max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-[0.98rem] outline-none placeholder:text-faint [field-sizing:content]"
                 />
                 {streaming ? (
-                  <Button type="button" variant="secondary" onClick={() => abort.current?.abort()} aria-label="Stop generating">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      abort.current?.abort();
+                      onRevealed();
+                    }}
+                    aria-label="Stop generating"
+                  >
                     <Square className="size-3.5 fill-current" /> Stop
                   </Button>
                 ) : (
@@ -323,9 +351,18 @@ function AssistantMessage({ m, onRetry, prevQuestion }: { m: Message; onRetry: (
   );
 }
 
-function PendingAnswer({ p, streaming, onRetry }: { p: Pending; streaming: boolean; onRetry: () => void }) {
-  // While streaming, markers aren't validated yet: they are hidden until the final message arrives.
-  const shown = p.text.replace(/\s*\[(?:S\d+(?:\s*,\s*S\d+)*)\]/g, "");
+function PendingAnswer({ p, streaming, onRetry, onRevealed }: { p: Pending; streaming: boolean; onRetry: () => void; onRevealed: () => void }) {
+  // While streaming, markers aren't validated yet: they are hidden until the final message arrives
+  // (including one that has only half arrived at the end of the text).
+  const received = p.text.replace(/\s*\[(?:S\d+(?:\s*,\s*S\d+)*)\]/g, "").replace(/\s*\[(?:S\d*(?:\s*,\s*S?\d*)*)?$/, "");
+  const { text: shown, done } = useTypewriter(received, p.complete);
+  const end = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (p.complete && done) onRevealed();
+  }, [p.complete, done, onRevealed]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "nearest" });
+  }, [shown]);
   return (
     <article aria-live="polite" aria-busy={streaming}>
       {p.estimate?.expensive && p.estimate.explanation && (
@@ -333,13 +370,9 @@ function PendingAnswer({ p, streaming, onRetry }: { p: Pending; streaming: boole
           {p.estimate.explanation}
         </Notice>
       )}
-      {streaming && !p.text && (
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <Spinner className="size-4" />
-          {p.sources.length ? `Reading ${p.sources.length} passages` : "Searching your library"}
-        </div>
-      )}
-      {p.text && <CitedText text={shown} cites={[]} />}
+      {streaming && !shown && <Thinking label={p.sources.length ? `Reading ${p.sources.length} passages` : "Searching your library"} />}
+      {shown && <CitedText text={shown} cites={[]} className={cn(streaming && !p.error && "writing")} />}
+      <div ref={end} />
       {p.error && (
         <div className="mt-3 space-y-3">
           <ErrorState error={new ApiError(0, { code: p.error.code, message: p.error.message })} onRetry={p.error.retryable ? onRetry : undefined} />

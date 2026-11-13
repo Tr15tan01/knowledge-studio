@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Laptop, LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { Download, Laptop, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -13,7 +13,7 @@ import { Badge, LoadingRows, Notice, PageHeader, Section, Tabs } from "@/compone
 import { Switch } from "@/components/ui/switch";
 import { ReauthProvider, useReauth } from "@/features/auth/reauth";
 import { qk, useAuthConfig } from "@/features/auth/session";
-import { useTheme, type ThemePref } from "@/features/theme/theme";
+import { ThemePicker } from "@/features/theme/theme-picker";
 import { ApiError, del, get, patch, post } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatDate, formatDateTime, relativeTime } from "@/lib/format";
@@ -219,7 +219,6 @@ function describeAgent(ua: string | null): string {
 
 function Preferences({ user }: { user: User }) {
   const qc = useQueryClient();
-  const { theme, setTheme } = useTheme();
   const save = async (prefs: Partial<User["preferences"]>) => {
     try {
       await patch("/me", { preferences: prefs });
@@ -234,28 +233,8 @@ function Preferences({ user }: { user: User }) {
       <div className="space-y-6">
         <div>
           <div className="mb-2 text-sm font-medium">Theme</div>
-          <div className="inline-flex rounded-[10px] border border-rule-strong p-1" role="radiogroup" aria-label="Theme">
-            {(
-              [
-                ["system", "System", Monitor],
-                ["light", "Light", Sun],
-                ["dark", "Dark", Moon],
-              ] as [ThemePref, string, typeof Sun][]
-            ).map(([v, l, Icon]) => (
-              <button
-                key={v}
-                role="radio"
-                aria-checked={theme === v}
-                onClick={() => {
-                  setTheme(v);
-                  save({ theme: v });
-                }}
-                className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm", theme === v ? "bg-ink text-paper" : "text-ink-2 hover:bg-surface-2")}
-              >
-                <Icon className="size-4" /> {l}
-              </button>
-            ))}
-          </div>
+          <ThemePicker onPick={(v) => save({ theme: v })} />
+          <p className="mt-2 text-[0.82rem] text-muted">System follows your device: Blue by day, Midnight when it is set to dark.</p>
         </div>
         <Switch
           checked={!!user.preferences.reduced_motion}

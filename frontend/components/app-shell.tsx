@@ -150,7 +150,7 @@ export function UserMenu() {
   const user = useUser();
   const router = useRouter();
   const signOut = useSignOut();
-  const { theme, setTheme } = useTheme();
+  const { dark, toggleDark } = useTheme();
   const initials = (user?.display_name || user?.email || "?")
     .split(/[\s@.]+/)
     .filter(Boolean)
@@ -170,9 +170,9 @@ export function UserMenu() {
         </button>
       }
     >
-      <MenuItem onSelect={() => setTheme(theme === "dark" ? "light" : "dark")}>
-        {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        {theme === "dark" ? "Light theme" : "Dark theme"}
+      <MenuItem onSelect={toggleDark}>
+        {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+        {dark ? "Light theme" : "Dark theme"}
       </MenuItem>
       <MenuItem onSelect={() => router.push("/app/settings")}>
         <Settings className="size-4" /> Settings

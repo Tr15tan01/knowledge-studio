@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRef, useState, type DragEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Gauge } from "@/components/ui/gauge";
 import { Select } from "@/components/ui/field";
 import { Notice, UsageBar } from "@/components/ui/misc";
 import { qk, useUsage } from "@/features/auth/session";
@@ -85,6 +86,13 @@ export function UploadDialog({ open, onOpenChange, collectionId }: { open: boole
 
   const ready = items.filter((i) => i.state === "ready");
   const readyBytes = ready.reduce((n, i) => n + i.file.size, 0);
+  // Progress of the whole batch, by bytes.
+  const batch = items.filter((i) => i.state !== "error");
+  const batchBytes = batch.reduce((n, i) => n + i.file.size, 0);
+  const sentBytes = batch.reduce((n, i) => n + i.file.size * (i.state === "done" ? 1 : i.state === "uploading" ? i.progress : 0), 0);
+  const current = items.find((i) => i.state === "uploading");
+  // Every byte is sent but the server hasn't answered yet (it is checking and storing the file).
+  const finishing = !!current && current.progress >= 1;
 
   return (
     <Dialog
@@ -126,6 +134,18 @@ export function UploadDialog({ open, onOpenChange, collectionId }: { open: boole
           </div>
         </div>
       )}
+      {current && (
+        <div className="flex items-center gap-5 rounded-[12px] border border-rule px-6 py-5" aria-live="polite">
+          <Gauge value={batchBytes ? sentBytes / batchBytes : 0} size={108} stroke={9} label="Upload progress" finishing={finishing} className="text-[1.45rem] font-semibold" />
+          <div className="min-w-0">
+            <p className="font-medium">{finishing ? "Finishing upload" : batch.length > 1 ? `Uploading ${batch.filter((i) => i.state === "done").length + 1} of ${batch.length}` : "Uploading"}</p>
+            <p className="truncate text-sm text-muted">{current.file.name}</p>
+            <p className="mt-1.5 text-sm tabular-nums text-muted">
+              {formatBytes(sentBytes)} of {formatBytes(batchBytes)}
+            </p>
+          </div>
+        </div>
+      )}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -136,6 +156,7 @@ export function UploadDialog({ open, onOpenChange, collectionId }: { open: boole
         className={cn(
           "flex flex-col items-center rounded-[12px] border-2 border-dashed px-6 py-8 text-center transition-colors",
           drag ? "border-action bg-action-soft" : "border-rule-strong",
+          current && "hidden",
         )}
       >
         <FileUp className="size-7 text-muted" />
@@ -178,11 +199,7 @@ export function UploadDialog({ open, onOpenChange, collectionId }: { open: boole
                   <span className="truncate text-sm font-medium">{it.file.name}</span>
                   <span className="shrink-0 text-xs tabular-nums text-muted">{formatBytes(it.file.size)}</span>
                 </div>
-                {it.state === "uploading" && (
-                  <div className="mt-1.5">
-                    <UsageBar used={Math.round(it.progress * 100)} limit={100} label={`Uploading ${it.file.name}`} />
-                  </div>
-                )}
+                {it.state === "uploading" && <p className="mt-0.5 text-xs text-muted">{it.progress >= 1 ? "Finishing" : "Uploading"}</p>}
                 {it.state === "done" && <p className="mt-0.5 text-xs text-ok">Uploaded. Processing has started.</p>}
                 {it.state === "error" && (
                   <p className="mt-0.5 text-xs text-danger">
@@ -203,7 +220,9 @@ export function UploadDialog({ open, onOpenChange, collectionId }: { open: boole
                 <button className="text-xs text-muted hover:text-ink" onClick={() => setItems((c) => c.filter((x) => x.key !== it.key))}>
                   Remove
                 </button>
-              ) : null}
+              ) : (
+                <Gauge value={it.progress} size={38} stroke={4} label={`Uploading ${it.file.name}`} finishing={it.progress >= 1} className="text-[0.62rem] font-semibold" />
+              )}
             </li>
           ))}
         </ul>

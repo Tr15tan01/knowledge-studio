@@ -1,17 +1,18 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FolderPlus, Library, MoreHorizontal, RotateCw, Search, Trash2, Upload } from "lucide-react";
+import { FolderPlus, Library, LibraryBig, List, MoreHorizontal, RotateCw, Search, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, IconButton } from "@/components/ui/button";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Menu, MenuItem, MenuSeparator } from "@/components/ui/menu";
-import { EmptyState, ErrorState, LoadingRows, Meta, PageHeader, Pagination, Tabs } from "@/components/ui/misc";
+import { Badge, EmptyState, ErrorState, LoadingRows, Meta, PageHeader, Pagination, Tabs } from "@/components/ui/misc";
 import { qk } from "@/features/auth/session";
+import { Shelf, ShelfBook } from "@/features/library/bookshelf";
 import { FileStatus, isProcessing } from "@/features/library/status";
 import { UploadDialog } from "@/features/library/upload-dialog";
 import { useDebounced, useUrlState } from "@/hooks/use-url-state";
@@ -22,10 +23,46 @@ import type { Collection, FileItem, LibraryStats, Paged } from "@/types/api";
 
 const PAGE_SIZE = 20;
 
+/** A file's state in a word, short enough to fit across the foot of a book. */
+function ShelfFlag({ file }: { file: FileItem }) {
+  switch (file.processing_status) {
+    case "indexed":
+      return <span className="sr-only">Ready</span>;
+    case "failed":
+    case "rejected":
+      return <Badge tone="danger">Failed</Badge>;
+    case "retrying":
+      return <Badge tone="warn">Retrying</Badge>;
+    case "processing":
+      return <Badge tone="action">Indexing</Badge>;
+    default:
+      return <Badge>Queued</Badge>;
+  }
+}
+
+function FileMenu({ file, trigger, onRetry, onDelete }: { file: FileItem; trigger: ReactNode; onRetry: () => void; onDelete: () => void }) {
+  const router = useRouter();
+  return (
+    <Menu trigger={trigger}>
+      <MenuItem onSelect={() => router.push(`/app/library/${file.id}`)}>Details</MenuItem>
+      {file.processing_status === "indexed" && <MenuItem onSelect={() => router.push(`/app/ask?file=${file.id}`)}>Ask about this file</MenuItem>}
+      {file.original_available && <MenuItem onSelect={() => window.open(`/api/v1/files/${file.id}/download`, "_self")}>Download original</MenuItem>}
+      {file.processing_status === "failed" && (
+        <MenuItem onSelect={onRetry}>
+          <RotateCw className="size-4" /> Retry processing
+        </MenuItem>
+      )}
+      <MenuSeparator />
+      <MenuItem danger onSelect={onDelete}>
+        <Trash2 className="size-4" /> Delete
+      </MenuItem>
+    </Menu>
+  );
+}
+
 function LibraryView() {
   const qc = useQueryClient();
-  const router = useRouter();
-  const [f, setF] = useUrlState({ status: "all", kind: "all", sort: "newest", q: "", collection: "", page: "1" });
+  const [f, setF] = useUrlState({ status: "all", kind: "all", sort: "newest", q: "", collection: "", page: "1", view: "shelf" });
   const [search, setSearch] = useState(f.q);
   const q = useDebounced(search, 300);
   useEffect(() => {
@@ -83,6 +120,13 @@ function LibraryView() {
 
   const items = files.data?.items ?? [];
   const allSelected = items.length > 0 && items.every((i) => selected.has(i.id));
+  const toggle = (id: string) =>
+    setSelected((cur) => {
+      const n = new Set(cur);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   const s = stats.data;
   const activeCollection = collections.data?.items.find((c) => c.id === f.collection);
 
@@ -151,6 +195,24 @@ function LibraryView() {
               <option value="title">Title</option>
               <option value="size">Largest first</option>
             </Select>
+            <div className="inline-flex rounded-[var(--radius-control)] border border-rule-strong p-0.5" role="group" aria-label="View">
+              {(
+                [
+                  ["shelf", "Shelf", LibraryBig],
+                  ["list", "List", List],
+                ] as const
+              ).map(([v, label, Icon]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={f.view === v}
+                  onClick={() => setF({ view: v })}
+                  className={cn("inline-flex h-8 items-center gap-1.5 rounded-[5px] px-2.5 text-sm", f.view === v ? "bg-ink text-paper" : "text-ink-2 hover:bg-surface-2")}
+                >
+                  <Icon className="size-4" /> {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {selected.size > 0 && (
@@ -206,6 +268,59 @@ function LibraryView() {
               >
                 {f.collection ? "Select files in All files and add them to this collection." : "Upload books and documents to search and question them."}
               </EmptyState>
+            ) : f.view !== "list" ? (
+              <>
+                <div className="mb-2 flex justify-end">
+                  <button type="button" className="text-sm text-ink-2 hover:text-ink hover:underline" onClick={() => setSelected(allSelected ? new Set() : new Set(items.map((i) => i.id)))}>
+                    {allSelected ? "Clear selection" : "Select all on this page"}
+                  </button>
+                </div>
+                <Shelf label="Files">
+                  {items.map((it) => {
+                    const name = it.title || it.filename;
+                    return (
+                      <ShelfBook
+                        key={it.id}
+                        seed={it.id}
+                        href={`/app/library/${it.id}`}
+                        title={name}
+                        // A book that isn't ready shows its state there instead.
+                        sub={it.processing_status === "indexed" ? `${it.file_type.toUpperCase()} · ${it.size_display}` : undefined}
+                        kind={it.kind}
+                        hint={[name, it.kind === "book" ? "Book" : it.kind === "document" ? "Document" : null, it.chunk_count ? `${it.chunk_count} passages` : null, relativeTime(it.created_at)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        selected={selected.has(it.id)}
+                        veil={it.processing_status !== "indexed"}
+                        flag={<ShelfFlag file={it} />}
+                        tools={
+                          <>
+                            <input
+                              type="checkbox"
+                              className="book-tool absolute left-2 top-1.5 size-4 accent-[var(--action)]"
+                              aria-label={`Select ${name}`}
+                              checked={selected.has(it.id)}
+                              onChange={() => toggle(it.id)}
+                            />
+                            <div className="book-tool absolute right-1 top-1">
+                              <FileMenu
+                                file={it}
+                                onRetry={() => retry.mutate(it.id)}
+                                onDelete={() => setToDelete([it])}
+                                trigger={
+                                  <button type="button" className="grid size-5 place-items-center rounded-full bg-black/50 text-white hover:bg-black/70" aria-label={`Actions for ${name}`}>
+                                    <MoreHorizontal className="size-4" />
+                                  </button>
+                                }
+                              />
+                            </div>
+                          </>
+                        }
+                      />
+                    );
+                  })}
+                </Shelf>
+              </>
             ) : (
               <div className="overflow-hidden rounded-[var(--radius-panel)] border border-rule bg-surface">
                 <table className="w-full table-fixed text-sm">
@@ -235,14 +350,7 @@ function LibraryView() {
                             className="size-4 accent-[var(--action)]"
                             aria-label={`Select ${it.title || it.filename}`}
                             checked={selected.has(it.id)}
-                            onChange={() =>
-                              setSelected((cur) => {
-                                const n = new Set(cur);
-                                if (n.has(it.id)) n.delete(it.id);
-                                else n.add(it.id);
-                                return n;
-                              })
-                            }
+                            onChange={() => toggle(it.id)}
                           />
                         </td>
                         <td className="py-3 pr-3">
@@ -267,26 +375,16 @@ function LibraryView() {
                         </td>
                         <td className="hidden py-3 pr-2 text-right tabular-nums text-muted sm:table-cell">{it.size_display}</td>
                         <td className="py-3 pr-2 text-right">
-                          <Menu
+                          <FileMenu
+                            file={it}
+                            onRetry={() => retry.mutate(it.id)}
+                            onDelete={() => setToDelete([it])}
                             trigger={
                               <IconButton label={`Actions for ${it.title || it.filename}`}>
                                 <MoreHorizontal className="size-4" />
                               </IconButton>
                             }
-                          >
-                            <MenuItem onSelect={() => router.push(`/app/library/${it.id}`)}>Details</MenuItem>
-                            {it.processing_status === "indexed" && <MenuItem onSelect={() => router.push(`/app/ask?file=${it.id}`)}>Ask about this file</MenuItem>}
-                            {it.original_available && <MenuItem onSelect={() => window.open(`/api/v1/files/${it.id}/download`, "_self")}>Download original</MenuItem>}
-                            {it.processing_status === "failed" && (
-                              <MenuItem onSelect={() => retry.mutate(it.id)}>
-                                <RotateCw className="size-4" /> Retry processing
-                              </MenuItem>
-                            )}
-                            <MenuSeparator />
-                            <MenuItem danger onSelect={() => setToDelete([it])}>
-                              <Trash2 className="size-4" /> Delete
-                            </MenuItem>
-                          </Menu>
+                          />
                         </td>
                       </tr>
                     ))}

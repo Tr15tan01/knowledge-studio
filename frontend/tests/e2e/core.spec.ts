@@ -115,3 +115,28 @@ test("public pricing comes from the plan catalog", async ({ page }) => {
   await expect(page.getByRole("columnheader", { name: /Premium/ })).toContainText("$79");
   await expect(page.getByText("Payments aren't enabled on this server yet.")).toBeVisible();
 });
+
+test("a chosen theme sticks, and the library is a shelf with a list view", async ({ page }) => {
+  await register(page);
+  await uploadSample(page);
+
+  await page.goto("/app/settings?tab=preferences");
+  const saved = page.waitForResponse((r) => r.url().endsWith("/api/v1/me") && r.request().method() === "PATCH");
+  await page.getByRole("radio", { name: "Black", exact: true }).click();
+  expect((await saved).status()).toBe(200);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "black");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "black");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(page.getByRole("radio", { name: "Black", exact: true })).toBeChecked();
+
+  // The shelf is the default view; each file is a book that opens its page.
+  await page.goto("/app/library");
+  const shelf = page.getByRole("list", { name: "Files" });
+  await expect(shelf.getByRole("link", { name: /Notes on the Caucasus/ })).toBeVisible();
+  await page.getByRole("button", { name: "List" }).click();
+  await expect(page.getByRole("table").getByText("Ready").filter({ visible: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Shelf" }).click();
+  await shelf.getByRole("link", { name: /Notes on the Caucasus/ }).click();
+  await expect(page).toHaveURL(/\/app\/library\/[a-f0-9]{24}$/);
+});
